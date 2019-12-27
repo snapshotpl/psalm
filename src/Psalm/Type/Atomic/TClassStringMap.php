@@ -272,4 +272,16 @@ class TClassStringMap extends \Psalm\Type\Atomic
 
         $this->checked = true;
     }
+
+    public function getStandinKeyParam() : Type\Union
+    {
+        return new Type\Union([
+            new TTemplateParamClass(
+                $this->param_name,
+                $this->as_type ? $this->as_type->value : 'object',
+                $this->as_type,
+                'class-string-map'
+            )
+        ]);
+    }
 }

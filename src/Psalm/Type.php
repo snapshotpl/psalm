@@ -251,9 +251,9 @@ abstract class Type
                     && $i === 0
                 ) {
                     if ($tree_type instanceof TTemplateParam) {
-                        $template_type_map[$tree_type->param_name] = ['' => [$tree_type->as]];
+                        $template_type_map[$tree_type->param_name] = ['class-string-map' => [$tree_type->as]];
                     } elseif ($tree_type instanceof TNamedObject) {
-                        $template_type_map[$tree_type->value] = ['' => [self::getObject()]];
+                        $template_type_map[$tree_type->value] = ['class-string-map' => [self::getObject()]];
                     }
                 }
 
@@ -705,7 +705,7 @@ abstract class Type
             return new Atomic\TTemplateParam(
                 $parse_tree->param_name,
                 new Union([new TNamedObject($parse_tree->as)]),
-                null
+                'class-string-map'
             );
         }
 

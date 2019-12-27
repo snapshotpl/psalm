@@ -629,6 +629,14 @@ class Union
     /**
      * @return bool
      */
+    public function hasClassStringMap()
+    {
+        return isset($this->types['array']) && $this->types['array'] instanceof Atomic\TClassStringMap;
+    }
+
+    /**
+     * @return bool
+     */
     public function hasEmptyArray()
     {
         return isset($this->types['array'])

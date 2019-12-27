@@ -8,6 +8,7 @@ use Psalm\Tests\Traits;
 class ClassStringMapTest extends TestCase
 {
     use Traits\ValidCodeAnalysisTestTrait;
+    use Traits\InvalidCodeAnalysisTestTrait;
 
     /**
      * @return iterable<string,array{string,assertions?:array<string,string>,error_levels?:string[]}>
@@ -38,6 +39,34 @@ class ClassStringMapTest extends TestCase
                             return self::$map[$class];
                         }
                     }',
+            ],
+        ];
+    }
+
+    /**
+     * @return iterable<string,array{string,error_message:string,2?:string[],3?:bool,4?:string}>
+     */
+    public function providerInvalidCodeParse()
+    {
+        return [
+            'assignInvalidClass' => [
+                '<?php
+                    namespace Bar;
+
+                    class Foo {}
+                    class A {
+                        /** @var class-string-map<T, T> */
+                        public static array $map = [];
+
+                        /**
+                         * @template T
+                         * @param class-string<T> $class
+                         */
+                        public function get(string $class) : void {
+                            self::$map[$class] = 5;
+                        }
+                    }',
+                'error_message' => 'InvalidPropertyAssignmentValue'
             ],
         ];
     }

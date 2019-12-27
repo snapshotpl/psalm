@@ -735,13 +735,14 @@ class ArrayFetchAnalyzer
                                     [],
                                     [
                                         $type->param_name => [
-                                            '' => [
+                                            'class-string-map' => [
                                                 new Type\Union([
                                                     new TTemplateParam(
                                                         $offset_type_part->param_name,
                                                         $offset_type_part->as_type
                                                             ? new Type\Union([$offset_type_part->as_type])
-                                                            : Type::getObject()
+                                                            : Type::getObject(),
+                                                        $offset_type_part->defining_class
                                                     )
                                                 ])
                                             ]
@@ -753,7 +754,7 @@ class ArrayFetchAnalyzer
                                     [],
                                     [
                                         $type->param_name => [
-                                            '' => [
+                                            'class-string-map' => [
                                                 new Type\Union([
                                                     $offset_type_part->as_type
                                                         ?: new Type\Atomic\TObject()

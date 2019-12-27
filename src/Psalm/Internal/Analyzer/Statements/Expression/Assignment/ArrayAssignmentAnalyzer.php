@@ -535,11 +535,29 @@ class ArrayAssignmentAnalyzer
                     && $child_stmt
                     && $parent_var_id
                     && ($parent_type = $context->vars_in_scope[$parent_var_id] ?? null)
-                    && $parent_type->hasList()
+
                 ) {
-                    $array_atomic_type = new TNonEmptyList(
-                        $current_type
-                    );
+                    if ($parent_type->hasList()) {
+                        $array_atomic_type = new TNonEmptyList(
+                            $current_type
+                        );
+                    } elseif ($parent_type->hasClassStringMap()) {
+                        /**
+                         * @var Type\Atomic\TClassStringMap
+                         * @psalm-suppress PossiblyUndefinedStringArrayOffset
+                         */
+                        $class_string_map = $parent_type->getTypes()['array'];
+                        $array_atomic_type = new Type\Atomic\TClassStringMap(
+                            $class_string_map->param_name,
+                            $class_string_map->as_type,
+                            $current_type
+                        );
+                    } else {
+                        $array_atomic_type = new TNonEmptyArray([
+                            $array_atomic_key_type,
+                            $current_type,
+                        ]);
+                    }
                 } else {
                     $array_atomic_type = new TNonEmptyArray([
                         $array_atomic_key_type,
