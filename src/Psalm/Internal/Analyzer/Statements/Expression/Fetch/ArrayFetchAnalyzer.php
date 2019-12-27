@@ -731,7 +731,7 @@ class ArrayFetchAnalyzer
                     foreach ($offset_type_parts as $offset_type_part) {
                         if ($offset_type_part instanceof Type\Atomic\TClassString) {
                             if ($offset_type_part instanceof Type\Atomic\TTemplateParamClass) {
-                                $template_result = new TemplateResult(
+                                $template_result_get = new TemplateResult(
                                     [],
                                     [
                                         $type->param_name => [
@@ -749,8 +749,27 @@ class ArrayFetchAnalyzer
                                         ]
                                     ]
                                 );
+
+                                $template_result_set = new TemplateResult(
+                                    [],
+                                    [
+                                        $offset_type_part->param_name => [
+                                            ($offset_type_part->defining_class ?: '') => [
+                                                new Type\Union([
+                                                    new TTemplateParam(
+                                                        $type->param_name,
+                                                        $type->as_type
+                                                            ? new Type\Union([$type->as_type])
+                                                            : Type::getObject(),
+                                                        'class-string-map'
+                                                    )
+                                                ])
+                                            ]
+                                        ]
+                                    ]
+                                );
                             } else {
-                                $template_result = new TemplateResult(
+                                $template_result_get = new TemplateResult(
                                     [],
                                     [
                                         $type->param_name => [
@@ -763,29 +782,40 @@ class ArrayFetchAnalyzer
                                         ]
                                     ]
                                 );
+                                $template_result_set = new TemplateResult(
+                                    [],
+                                    []
+                                );
                             }
 
-                            $expected_value_param = clone $type->value_param;
+                            $expected_value_param_get = clone $type->value_param;
+
+                            $expected_value_param_get->replaceTemplateTypesWithArgTypes(
+                                $template_result_get->generic_params,
+                                $codebase
+                            );
 
                             if ($replacement_type) {
-                                $type->value_param = Type::combineUnionTypes(
-                                    $replacement_type,
-                                    $expected_value_param,
+                                $expected_value_param_set = clone $type->value_param;
+
+                                $replacement_type->replaceTemplateTypesWithArgTypes(
+                                    $template_result_set->generic_params,
                                     $codebase
                                 );
-                            } else {
-                                $expected_value_param->replaceTemplateTypesWithArgTypes(
-                                    $template_result->generic_params,
+
+                                $type->value_param = Type::combineUnionTypes(
+                                    $replacement_type,
+                                    $expected_value_param_set,
                                     $codebase
                                 );
                             }
 
                             if (!$array_access_type) {
-                                $array_access_type = $expected_value_param;
+                                $array_access_type = $expected_value_param_get;
                             } else {
                                 $array_access_type = Type::combineUnionTypes(
                                     $array_access_type,
-                                    $expected_value_param,
+                                    $expected_value_param_get,
                                     $codebase
                                 );
                             }

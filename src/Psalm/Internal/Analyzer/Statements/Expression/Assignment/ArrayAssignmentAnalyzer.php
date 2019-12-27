@@ -294,7 +294,7 @@ class ArrayAssignmentAnalyzer
                 $context->possibly_assigned_var_ids[$rooted_parent_id] = true;
             }
 
-            if (!$child_stmts) {
+            if (!$child_stmts && !$child_stmt_type->hasTemplate()) {
                 $child_stmt_type = $assignment_type;
                 $statements_analyzer->node_data->setType($child_stmt, $assignment_type);
             }
@@ -330,6 +330,7 @@ class ArrayAssignmentAnalyzer
             && $child_stmt
             && ($child_stmt_var_type = $statements_analyzer->node_data->getType($child_stmt->var))
             && !$child_stmt_var_type->hasObjectType()
+            && !$child_stmt_var_type->hasClassStringMap()
         ) {
             $array_var_id = $root_var_id . implode('', $var_id_additions);
             $parent_var_id = $root_var_id . implode('', \array_slice($var_id_additions, 0, -1));
