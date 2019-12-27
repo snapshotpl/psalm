@@ -32,6 +32,7 @@ use Psalm\Type;
 use Psalm\Type\Atomic\ObjectLike;
 use Psalm\Type\Atomic\TArray;
 use Psalm\Type\Atomic\TArrayKey;
+use Psalm\Type\Atomic\TClassStringMap;
 use Psalm\Type\Atomic\TEmpty;
 use Psalm\Type\Atomic\TLiteralInt;
 use Psalm\Type\Atomic\TLiteralString;
@@ -56,6 +57,7 @@ use function in_array;
 use function is_int;
 use function preg_match;
 use Psalm\Internal\Taint\Source;
+use Psalm\Internal\Type\TemplateResult;
 
 /**
  * @internal
@@ -481,7 +483,11 @@ class ArrayFetchAnalyzer
                 continue;
             }
 
-            if ($type instanceof TArray || $type instanceof ObjectLike || $type instanceof TList) {
+            if ($type instanceof TArray
+                || $type instanceof ObjectLike
+                || $type instanceof TList
+                || $type instanceof TClassStringMap
+            ) {
                 $has_array_access = true;
 
                 if ($in_assignment
@@ -718,6 +724,71 @@ class ArrayFetchAnalyzer
                             $array_access_type,
                             $type->type_param
                         );
+                    }
+                } elseif ($type instanceof TClassStringMap) {
+                    $offset_type_parts = array_values($offset_type->getTypes());
+
+                    foreach ($offset_type_parts as $offset_type_part) {
+                        if ($offset_type_part instanceof Type\Atomic\TClassString) {
+                            if ($offset_type_part instanceof Type\Atomic\TTemplateParamClass) {
+                                $template_result = new TemplateResult(
+                                    [],
+                                    [
+                                        $type->param_name => [
+                                            '' => [
+                                                new Type\Union([
+                                                    new TTemplateParam(
+                                                        $offset_type_part->param_name,
+                                                        $offset_type_part->as_type
+                                                            ? new Type\Union([$offset_type_part->as_type])
+                                                            : Type::getObject()
+                                                    )
+                                                ])
+                                            ]
+                                        ]
+                                    ]
+                                );
+                            } else {
+                                $template_result = new TemplateResult(
+                                    [],
+                                    [
+                                        $type->param_name => [
+                                            '' => [
+                                                new Type\Union([
+                                                    $offset_type_part->as_type
+                                                        ?: new Type\Atomic\TObject()
+                                                ])
+                                            ]
+                                        ]
+                                    ]
+                                );
+                            }
+
+                            $expected_value_param = clone $type->value_param;
+
+                            $expected_value_param->replaceTemplateTypesWithArgTypes(
+                                $template_result->generic_params,
+                                $codebase
+                            );
+
+                            if ($replacement_type) {
+                                $type->value_param = Type::combineUnionTypes(
+                                    $replacement_type,
+                                    $expected_value_param,
+                                    $codebase
+                                );
+                            }
+
+                            if (!$array_access_type) {
+                                $array_access_type = $expected_value_param;
+                            } else {
+                                $array_access_type = Type::combineUnionTypes(
+                                    $array_access_type,
+                                    $expected_value_param,
+                                    $codebase
+                                );
+                            }
+                        }
                     }
                 } else {
                     $generic_key_type = $type->getGenericKeyType();
