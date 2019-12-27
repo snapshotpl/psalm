@@ -541,12 +541,44 @@ class ArrayAssignmentAnalyzer
                         $array_atomic_type = new TNonEmptyList(
                             $current_type
                         );
-                    } elseif ($parent_type->hasClassStringMap()) {
+                    } elseif ($parent_type->hasClassStringMap()
+                        && $current_dim_type
+                        && $current_dim_type->isTemplatedClassString()
+                    ) {
                         /**
                          * @var Type\Atomic\TClassStringMap
                          * @psalm-suppress PossiblyUndefinedStringArrayOffset
                          */
                         $class_string_map = $parent_type->getTypes()['array'];
+                        /**
+                         * @var Type\Atomic\TTemplateParamClass
+                         */
+                        $offset_type_part = array_values($current_dim_type->getTypes())[0];
+
+                        $template_result = new \Psalm\Internal\Type\TemplateResult(
+                            [],
+                            [
+                                $offset_type_part->param_name => [
+                                    ($offset_type_part->defining_class ?? '') => [
+                                        new Type\Union([
+                                            new Type\Atomic\TTemplateParam(
+                                                $class_string_map->param_name,
+                                                $offset_type_part->as_type
+                                                    ? new Type\Union([$offset_type_part->as_type])
+                                                    : Type::getObject(),
+                                                'class-string-map'
+                                            )
+                                        ])
+                                    ]
+                                ]
+                            ]
+                        );
+
+                        $current_type->replaceTemplateTypesWithArgTypes(
+                            $template_result->generic_params,
+                            $codebase
+                        );
+
                         $array_atomic_type = new Type\Atomic\TClassStringMap(
                             $class_string_map->param_name,
                             $class_string_map->as_type,

@@ -40,6 +40,30 @@ class ClassStringMapTest extends TestCase
                         }
                     }',
             ],
+            'basicClassStringMapDifferentTemplateName' => [
+                '<?php
+                    namespace Bar;
+
+                    class Foo {}
+                    class A {
+                        /** @var class-string-map<T as Foo, T> */
+                        public static array $map = [];
+
+                        /**
+                         * @template U as Foo
+                         * @param class-string<U> $class
+                         * @return U
+                         */
+                        public function get(string $class) : Foo {
+                            if (isset(self::$map[$class])) {
+                                return self::$map[$class];
+                            }
+
+                            self::$map[$class] = new $class();
+                            return self::$map[$class];
+                        }
+                    }',
+            ],
         ];
     }
 
@@ -61,6 +85,25 @@ class ClassStringMapTest extends TestCase
                         /**
                          * @template T
                          * @param class-string<T> $class
+                         */
+                        public function get(string $class) : void {
+                            self::$map[$class] = 5;
+                        }
+                    }',
+                'error_message' => 'InvalidPropertyAssignmentValue'
+            ],
+            'assignInvalidClassDifferentTemplateName' => [
+                '<?php
+                    namespace Bar;
+
+                    class Foo {}
+                    class A {
+                        /** @var class-string-map<T, T> */
+                        public static array $map = [];
+
+                        /**
+                         * @template U
+                         * @param class-string<U> $class
                          */
                         public function get(string $class) : void {
                             self::$map[$class] = 5;

@@ -767,15 +767,15 @@ class ArrayFetchAnalyzer
 
                             $expected_value_param = clone $type->value_param;
 
-                            $expected_value_param->replaceTemplateTypesWithArgTypes(
-                                $template_result->generic_params,
-                                $codebase
-                            );
-
                             if ($replacement_type) {
                                 $type->value_param = Type::combineUnionTypes(
                                     $replacement_type,
                                     $expected_value_param,
+                                    $codebase
+                                );
+                            } else {
+                                $expected_value_param->replaceTemplateTypesWithArgTypes(
+                                    $template_result->generic_params,
                                     $codebase
                                 );
                             }
